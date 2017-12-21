@@ -22,11 +22,10 @@ const router = new VueRouter({
 })
 router.beforeEach((to, from, next, action) => {
   console.log(action)
-  if(action === 'POP') next('/')
-  else next()
+  next()
 })
-router.afterEach((to, from, next, action) => {
-  console.log(to, from, next, action)
+router.afterEach((to, from, action) => {
+  console.log(action)
 })
 // 4. Create and mount root instance.
 // Make sure to inject the router.
