@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-
 // 1. Use plugin.
 // This installs <router-view> and <router-link>,
 // and injects $router and $route to all router-enabled child components
@@ -21,7 +20,14 @@ const router = new VueRouter({
     { path: '/bar', component: Bar }
   ]
 })
-
+router.beforeEach((to, from, next, action) => {
+  console.log(action)
+  if(action === 'POP') next('/')
+  else next()
+})
+router.afterEach((to, from, next, action) => {
+  console.log(to, from, next, action)
+})
 // 4. Create and mount root instance.
 // Make sure to inject the router.
 // Route components will be rendered inside <router-view>.

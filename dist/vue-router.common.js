@@ -24,7 +24,7 @@ function isError (err) {
 }
 
 var View = {
-  name: 'router-view',
+  name: 'RouterView',
   functional: true,
   props: {
     name: {
@@ -383,7 +383,7 @@ var toTypes = [String, Object];
 var eventTypes = [String, Array];
 
 var Link = {
-  name: 'router-link',
+  name: 'RouterLink',
   props: {
     to: {
       type: toTypes,
@@ -559,8 +559,8 @@ function install (Vue) {
     get: function get () { return this._routerRoot._route }
   });
 
-  Vue.component('router-view', View);
-  Vue.component('router-link', Link);
+  Vue.component('RouterView', View);
+  Vue.component('RouterLink', Link);
 
   var strats = Vue.config.optionMergeStrategies;
   // use the same hook merging strategy for route hooks
@@ -1562,7 +1562,7 @@ function handleScroll (
   // wait until re-render finishes before scrolling
   router.app.$nextTick(function () {
     var position = getScrollPosition();
-    var shouldScroll = behavior(to, from, isPop ? position : null);
+    var shouldScroll = behavior.call(router, to, from, isPop ? position : null);
 
     if (!shouldScroll) {
       return
@@ -1665,9 +1665,9 @@ var supportsPushState = inBrowser && (function () {
     return false
   }
 
-  return window.history && 'pushState' in window.history
+  //return window.history && 'pushState' in window.history
+  return false
 })();
-
 // use User Timing api (if present) for more accurate key precision
 var Time = inBrowser && window.performance && window.performance.now
   ? window.performance
@@ -1869,12 +1869,12 @@ History.prototype.onError = function onError (errorCb) {
   this.errorCbs.push(errorCb);
 };
 
-History.prototype.transitionTo = function transitionTo (location, onComplete, onAbort) {
+History.prototype.transitionTo = function transitionTo (location, onComplete, onAbort, action) {
     var this$1 = this;
 
   var route = this.router.match(location, this.current);
   this.confirmTransition(route, function () {
-    this$1.updateRoute(route);
+    this$1.updateRoute(route, action);
     onComplete && onComplete(route);
     this$1.ensureURL();
 
@@ -1891,10 +1891,10 @@ History.prototype.transitionTo = function transitionTo (location, onComplete, on
       this$1.ready = true;
       this$1.readyErrorCbs.forEach(function (cb) { cb(err); });
     }
-  });
+  }, action);
 };
 
-History.prototype.confirmTransition = function confirmTransition (route, onComplete, onAbort) {
+History.prototype.confirmTransition = function confirmTransition (route, onComplete, onAbort, action) {
     var this$1 = this;
 
   var current = this.current;
@@ -1965,7 +1965,7 @@ History.prototype.confirmTransition = function confirmTransition (route, onCompl
           // confirm transition and pass on the value
           next(to);
         }
-      });
+      }, action);
     } catch (e) {
       abort(e);
     }
@@ -1993,12 +1993,12 @@ History.prototype.confirmTransition = function confirmTransition (route, onCompl
   });
 };
 
-History.prototype.updateRoute = function updateRoute (route) {
+History.prototype.updateRoute = function updateRoute (route, action) {
   var prev = this.current;
   this.current = route;
   this.cb && this.cb(route);
   this.router.afterHooks.forEach(function (hook) {
-    hook && hook(route, prev);
+    hook && hook(route, prev, action);
   });
 };
 
@@ -2143,8 +2143,9 @@ var HTML5History = (function (History$$1) {
     History$$1.call(this, router, base);
 
     var expectScroll = router.options.scrollBehavior;
+    var supportsScroll = supportsPushState && expectScroll;
 
-    if (expectScroll) {
+    if (supportsScroll) {
       setupScroll();
     }
 
@@ -2160,7 +2161,7 @@ var HTML5History = (function (History$$1) {
       }
 
       this$1.transitionTo(location, function (route) {
-        if (expectScroll) {
+        if (supportsScroll) {
           handleScroll(router, route, current, true);
         }
       });
@@ -2256,6 +2257,7 @@ var HashHistory = (function (History$$1) {
       if (!ensureSlash()) {
         return
       }
+      var action = 'POP';
       this$1.transitionTo(getHash(), function (route) {
         if (supportsScroll) {
           handleScroll(this$1.router, route, current, true);
@@ -2263,20 +2265,21 @@ var HashHistory = (function (History$$1) {
         if (!supportsPushState) {
           replaceHash(route.fullPath);
         }
-      });
+      }, null, action);
     });
   };
 
   HashHistory.prototype.push = function push (location, onComplete, onAbort) {
     var this$1 = this;
 
+    var action = 'PUSH';
     var ref = this;
     var fromRoute = ref.current;
     this.transitionTo(location, function (route) {
       pushHash(route.fullPath);
       handleScroll(this$1.router, route, fromRoute, false);
       onComplete && onComplete(route);
-    }, onAbort);
+    }, onAbort, action);
   };
 
   HashHistory.prototype.replace = function replace (location, onComplete, onAbort) {
@@ -2284,11 +2287,12 @@ var HashHistory = (function (History$$1) {
 
     var ref = this;
     var fromRoute = ref.current;
+    var action = 'REPLACE';
     this.transitionTo(location, function (route) {
       replaceHash(route.fullPath);
       handleScroll(this$1.router, route, fromRoute, false);
       onComplete && onComplete(route);
-    }, onAbort);
+    }, onAbort, action);
   };
 
   HashHistory.prototype.go = function go (n) {

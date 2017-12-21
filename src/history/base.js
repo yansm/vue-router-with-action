@@ -61,10 +61,10 @@ export class History {
     this.errorCbs.push(errorCb)
   }
 
-  transitionTo (location: RawLocation, onComplete?: Function, onAbort?: Function) {
+  transitionTo (location: RawLocation, onComplete?: Function, onAbort?: Function, action: String) {
     const route = this.router.match(location, this.current)
     this.confirmTransition(route, () => {
-      this.updateRoute(route)
+      this.updateRoute(route, action)
       onComplete && onComplete(route)
       this.ensureURL()
 
@@ -81,10 +81,10 @@ export class History {
         this.ready = true
         this.readyErrorCbs.forEach(cb => { cb(err) })
       }
-    })
+    }, action)
   }
 
-  confirmTransition (route: Route, onComplete: Function, onAbort?: Function) {
+  confirmTransition (route: Route, onComplete: Function, onAbort?: Function, action: String) {
     const current = this.current
     const abort = err => {
       if (isError(err)) {
@@ -154,7 +154,7 @@ export class History {
             // confirm transition and pass on the value
             next(to)
           }
-        })
+        }, action)
       } catch (e) {
         abort(e)
       }
@@ -182,12 +182,12 @@ export class History {
     })
   }
 
-  updateRoute (route: Route) {
+  updateRoute (route: Route, action: String) {
     const prev = this.current
     this.current = route
     this.cb && this.cb(route)
     this.router.afterHooks.forEach(hook => {
-      hook && hook(route, prev)
+      hook && hook(route, prev, action)
     })
   }
 }

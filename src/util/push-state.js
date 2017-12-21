@@ -15,9 +15,9 @@ export const supportsPushState = inBrowser && (function () {
     return false
   }
 
-  return window.history && 'pushState' in window.history
+  //return window.history && 'pushState' in window.history
+  return false
 })()
-
 // use User Timing api (if present) for more accurate key precision
 const Time = inBrowser && window.performance && window.performance.now
   ? window.performance
